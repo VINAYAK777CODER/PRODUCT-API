@@ -1,163 +1,96 @@
 package handlers
 
 import (
-	"WORKING-GO/data" // import our data package (contains Product list + JSON code)
-	"log"             // used for printing logs
-	"net/http"        // used for creating HTTP servers and handlers
-	"regexp"
+	"WORKING-GO/data"
+	"log"
+	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
-// Products is a struct that holds a logger.
-// We keep a struct so we can attach methods to it.
+// Products holds a logger and groups all product-related handler methods.
 type Products struct {
-	l *log.Logger // logger used to print messages in server
+	l *log.Logger
 }
 
-// NewProducts creates a new Products handler and returns it.
-// We pass the logger so this handler can use it.
+// NewProducts returns a new Products handler with the provided logger.
 func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-// ServeHTTP makes Products satisfy the http.Handler interface.
-// This function runs automatically when a request comes to this handler.
-func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+//
+// GET /product
+// Returns all products
+//
+func (p *Products) GetProducts(c *gin.Context) {
+	p.l.Println("GET /product called")
 
-	// ---------------------------
-	// HANDLE GET REQUEST
-	// If client sends GET /products → return all products
-	// ---------------------------
-	if r.Method == http.MethodGet {
-		p.getProducts(rw, r)
-		return
-	}
-
-	// ---------------------------
-	// HANDLE POST REQUEST
-	// If client sends POST /products → add a new product
-	// ---------------------------
-	if r.Method == http.MethodPost {
-		p.addProducts(rw, r)
-		return
-	}
-
-	// ---------------------------
-	// HANDLE PUT REQUEST
-	// PUT always requires an ID → PUT /products/3
-	// ---------------------------
-	if r.Method == http.MethodPut {
-
-		// Create a regex to extract number (ID) from URL
-		// Example URL: /products/10 → captures "10"
-		reg := regexp.MustCompile(`/([0-9]+)`)
-
-		// Find first match in the URL path
-		// Example output: ["/10", "10"]
-		g := reg.FindStringSubmatch(r.URL.Path)
-
-		// If match is not exactly 2 items → URL is invalid
-		// (means ID not found)
-		if len(g) != 2 {
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-
-		// Extract ID string from match
-		idString := g[1]
-
-		// Convert ID string → integer
-		id, _ := strconv.Atoi(idString)
-
-		// Log the ID (just for debugging)
-		p.l.Println("Got ID:", id)
-
-		// Call update handler to process the PUT request
-		p.updateProducts(id, rw, r)
-		return
-	}
-
-	// ---------------------------
-	// HANDLE ALL OTHER METHODS
-	// If user sends DELETE / PATCH / HEAD / OPTIONS etc.
-	// → We do not support them, so return 405
-	// ---------------------------
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-// getProducts sends all product data in JSON format
-func (p *Products) getProducts(rw http.ResponseWriter, r *http.Request) {
-
-	// Get the list of products from data package
+	// retrieve product list from data layer
 	lp := data.GetProductList()
 
-	// Convert product list to JSON and write it to response
-	err := lp.ToJSON(rw)
-
-	// If something went wrong while converting to JSON
-	if err != nil {
-		http.Error(rw, "unable to convert data to json", http.StatusInternalServerError)
-		return
-	}
+	// return list as JSON
+	c.JSON(http.StatusOK, lp)
 }
 
-func (p *Products) addProducts(rw http.ResponseWriter, r *http.Request) {
-	p.l.Println("Product POST request received")
+//
+// POST /product
+// Adds a new product
+//
+func (p *Products) AddProduct(c *gin.Context) {
+	p.l.Println("POST /product called")
 
-	// create an empty Product struct
+	// holds incoming JSON data
 	prod := &data.Product{}
 
-	// decode the JSON body into prod
-	err := prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "unable to unmarshal json", http.StatusBadRequest)
+	// parse request body into struct
+	if err := c.BindJSON(prod); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
-	p.l.Printf("Prod: %#v", prod)
-
-	// add the product to in-memory list
+	// save product into in-memory store
 	data.AddProduct(prod)
 
+	c.JSON(http.StatusCreated, gin.H{"message": "product added", "data": prod})
 }
 
-// updateProducts handles PUT /products/{id}
-// It receives ID extracted from URL, reads new JSON data,
-// and asks the data layer to update the product.
-func (p *Products) updateProducts(id int, rw http.ResponseWriter, r *http.Request) {
+//
+// PUT /product/:id
+// Updates an existing product by ID
+//
+func (p *Products) UpdateProduct(c *gin.Context) {
+	p.l.Println("PUT /product/:id called")
 
-	// Just log that PUT request started
-	p.l.Println("Handle PUT request")
+	// extract id from URL
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
 
-	// Create an empty product struct where new data will be filled
+	// holds updated product data
 	prod := &data.Product{}
 
-	// STEP 1: Decode JSON body → fill "prod"
-	// Example: {"name":"Tea", "price":50}
-	err := prod.FromJSON(r.Body)
-	if err != nil {
-		// If client sends invalid JSON → return 400 Bad Request
-		http.Error(rw, "unable to unmarshal json", http.StatusBadRequest)
+	// parse JSON body
+	if err := c.BindJSON(prod); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
-	// STEP 2: Ask the DATA LAYER to update this product
-	// This function will:
-	//   - Search product by ID
-	//   - Replace old product with new one
+	// try updating in data layer
 	err = data.UpdateProduct(id, prod)
 
-	// If ID does not exist → send 404 Not Found
 	if err == data.ErrProductNotFound {
-		http.Error(rw, "Product not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
 
-	// If any OTHER problem occurred → send 500
 	if err != nil {
-		http.Error(rw, "Unable to update product", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "unable to update product"})
 		return
 	}
 
-	// If everything is OK, no need to send anything (or you can send OK)
+	c.JSON(http.StatusOK, gin.H{"message": "product updated"})
 }

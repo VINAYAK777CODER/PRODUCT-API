@@ -2,6 +2,7 @@ package main
 
 import (
 	"WORKING-GO/handlers"
+	"WORKING-GO/middleware"
 	"context"
 	"log"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -23,18 +26,29 @@ func main() {
 	ph:=handlers.NewProducts(l)
 
 	// 3️⃣ Create router
-	sm := http.NewServeMux()
+	// sm := http.NewServeMux()
+
+	// using gin creating router
+
+	r:=gin.Default()
+	r.GET("/",ph.GetProducts)	
+	r.POST("/products",middleware.MethodCheck(),middleware.JSONCheck(),ph.AddProduct)
+	r.PUT("/products/:id",middleware.MethodCheck(),middleware.JSONCheck(),ph.UpdateProduct)
+
 
 	// 4️⃣ Register routes
 	// sm.Handle("/", hh)
 	// sm.Handle("/goodbye", gh)
-	sm.Handle("/",ph)
+	// sm.Handle("/product",ph).
+
+
+
 
 
 	// 5️⃣ Create a fully configured server
 	s := &http.Server{
 		Addr:         ":9090",               // server port
-		Handler:      sm,                    // router
+		Handler:      r,                    // router
 		IdleTimeout:  120 * time.Second,     // disconnect idle clients
 		ReadTimeout:  1 * time.Second,       // read time limit
 		WriteTimeout: 1 * time.Second,       // write time limit
