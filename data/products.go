@@ -3,28 +3,114 @@ package data
 import (
 	"encoding/json" // Used to convert Go data <-> JSON
 	"fmt"
-	"io"   // io.Reader + io.Writer (used by HTTP request & response)
+	"io" // io.Reader + io.Writer (used by HTTP request & response)
+	"regexp"
 	"time" // Used for timestamps (CreatedOn, UpdatedOn, etc.)
+
+	"github.com/go-playground/validator/v10"
 )
 
-// ----------------------
-// Product STRUCT
-// ----------------------
-//
-// Represents ONE product.
-// json:"fieldName" → how the field appears in JSON.
-// json:"_"         → this field will NOT be sent in JSON output.
-type Product struct {
-	ID          int     `json:"id"`          // Included in JSON
-	Name        string  `json:"name"`        // Included in JSON
-	Description string  `json:"description"` // Included in JSON
-	Price       float32 `json:"price"`       // Included in JSON
 
-	// These fields are INTERNAL only → not shown in JSON response
-	SKU       string `json:"_"`
-	CreatedOn string `json:"_"`
-	UpdatedOn string `json:"_"`
-	DeletedOn string `json:"_"`
+/*
+------------------------------------------------------
+GLOBAL VARIABLES (package-level)
+------------------------------------------------------
+We define these here because:
+
+1. skuRegex is compiled ONLY ONCE → faster performance.
+2. validate is created ONCE → avoids re-registering rules.
+3. init() will prepare everything BEFORE main() runs.
+*/
+var (
+	validate = validator.New() // Validator instance used by all products
+	skuRegex = regexp.MustCompile(`^[a-z]+-[0-9]+-[a-z]+$`) // Precompiled regex
+)
+
+/*
+------------------------------------------------------
+init() FUNCTION (special function)
+------------------------------------------------------
+REASON: init() is automatically executed by Go *before* main().
+
+Why use init() here?
+✔ Register custom validators only once
+✔ Avoid repeated setup in Product.Validate()
+✔ Cleaner and faster
+
+You NEVER call init() yourself.
+Go runtime always calls it before main.
+*/
+func init() {
+
+	// Register our custom validation rule named "sku"
+	// Example: validate:"sku"
+	err := validate.RegisterValidation("sku", validateSKU)
+
+	// If registration fails (ex: duplicate tag), print an error
+	if err != nil {
+		fmt.Println("Error registering SKU validation:", err.Error())
+	}
+}
+
+/*
+------------------------------------------------------
+Product Struct
+------------------------------------------------------
+The 'SKU' field uses custom validation tag: `sku`
+So the validator will run validateSKU() on this field.
+*/
+type Product struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name" validate:"required"`
+	Description string  `json:"description"`
+	Price       float32 `json:"price" validate:"gt=0"`
+	SKU         string  `json:"sku" validate:"required,sku"`
+	CreatedOn   string  `json:"-"` // "-" means DO NOT show in JSON
+	UpdatedOn   string  `json:"-"`
+	DeletedOn   string  `json:"-"`
+}
+
+/*
+------------------------------------------------------
+Product.Validate()
+------------------------------------------------------
+This method calls validator.Struct(p)
+which checks:
+
+✔ Built-in rules (required, gt=0)
+✔ Custom rule ("sku")
+
+REASON:
+We separated registration into init(),
+so this method stays clean and fast.
+*/
+func (p *Product) Validate() error {
+	return validate.Struct(p)
+}
+
+/*
+------------------------------------------------------
+validateSKU()
+------------------------------------------------------
+This is our custom validator function.
+
+Purpose:
+Validate that SKU matches format:
+   letters - numbers - letters
+   example: abc-123-xyz
+
+Steps:
+1. Extract the field value as string
+2. Match it against precompiled regex
+3. Return true (valid) or false (invalid)
+*/
+func validateSKU(fl validator.FieldLevel) bool {
+
+	// Field value (e.g., "abc-123-xyz")
+	sku := fl.Field().String()
+
+	// Match with strict regex pattern
+	return skuRegex.MatchString(sku)
 }
 
 // ----------------------
@@ -153,7 +239,7 @@ var ProductList = []*Product{
 		Name:        "Latte",
 		Description: "Frothy milky coffee",
 		Price:       2.45,
-		SKU:         "abc323",
+		SKU:         "abc-323-abc",
 		CreatedOn:   time.Now().UTC().String(),
 		UpdatedOn:   time.Now().UTC().String(),
 	},
@@ -162,7 +248,7 @@ var ProductList = []*Product{
 		Name:        "Espresso",
 		Description: "Short and strong coffee without milk",
 		Price:       1.99,
-		SKU:         "fjd34",
+		SKU:         "fjd-343-abd",
 		CreatedOn:   time.Now().UTC().String(),
 		UpdatedOn:   time.Now().UTC().String(),
 	},

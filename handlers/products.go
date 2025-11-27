@@ -19,10 +19,8 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-//
 // GET /product
 // Returns all products
-//
 func (p *Products) GetProducts(c *gin.Context) {
 	p.l.Println("GET /product called")
 
@@ -33,10 +31,8 @@ func (p *Products) GetProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, lp)
 }
 
-//
 // POST /product
 // Adds a new product
-//
 func (p *Products) AddProduct(c *gin.Context) {
 	p.l.Println("POST /product called")
 
@@ -49,16 +45,20 @@ func (p *Products) AddProduct(c *gin.Context) {
 		return
 	}
 
+	// 2️⃣ Validate product input  🔥 REQUIRED
+	if err := prod.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validation_error": err.Error()})
+		return
+	}
+
 	// save product into in-memory store
 	data.AddProduct(prod)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "product added", "data": prod})
 }
 
-//
 // PUT /product/:id
 // Updates an existing product by ID
-//
 func (p *Products) UpdateProduct(c *gin.Context) {
 	p.l.Println("PUT /product/:id called")
 
@@ -76,6 +76,12 @@ func (p *Products) UpdateProduct(c *gin.Context) {
 	// parse JSON body
 	if err := c.BindJSON(prod); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+		return
+	}
+
+	// Validate updated product
+	if err := prod.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validation_error": err.Error()})
 		return
 	}
 
