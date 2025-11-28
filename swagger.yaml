@@ -54,6 +54,29 @@ paths:
             tags:
                 - products
     /products/{id}:
+        delete:
+            description: This endpoint removes the product with the provided ID from the system.
+            operationId: deleteProduct
+            parameters:
+                - description: Product ID to delete
+                  format: int64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                "200":
+                    $ref: '#/responses/deleteProductResponse'
+                "400":
+                    $ref: '#/responses/deleteProductError'
+                "404":
+                    $ref: '#/responses/deleteProductNotFound'
+                "500":
+                    $ref: '#/responses/deleteProductError'
+            summary: Delete a product by ID
+            tags:
+                - products
         put:
             description: |-
                 This endpoint updates a product that already exists in the system.
@@ -79,6 +102,34 @@ paths:
 produces:
     - application/json
 responses:
+    deleteProductError:
+        description: Error response (invalid id / internal)
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    deleteProductNotFound:
+        description: Error response (not found)
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    deleteProductResponse:
+        description: Successful delete response
+        schema:
+            properties:
+                id:
+                    format: int64
+                    type: integer
+                    x-go-name: ID
+                message:
+                    type: string
+                    x-go-name: Message
+            type: object
     productAddBadRequest:
         description: ""
         schema:

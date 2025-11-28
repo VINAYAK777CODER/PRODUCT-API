@@ -39,6 +39,7 @@ func main() {
 		productRoutes.GET("/", ph.GetProducts)
 		productRoutes.POST("/", appmw.MethodCheck(), appmw.JSONCheck(), ph.AddProduct)
 		productRoutes.PUT("/:id", appmw.MethodCheck(), appmw.JSONCheck(), ph.UpdateProduct)
+		productRoutes.DELETE("/:id",ph.Delete)
 	}
 
 	// serve swagger file
