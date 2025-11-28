@@ -23,35 +23,34 @@ func main() {
 	// 2️⃣ Create handlers + inject logger
 	// hh := handlers.NewHello(l)
 	// gh := handlers.NewGoodBye(l)
-	ph:=handlers.NewProducts(l)
+	ph := handlers.NewProducts(l)
 
 	// 3️⃣ Create router
 	// sm := http.NewServeMux()
 
 	// using gin creating router
 
-	r:=gin.Default()
-	r.GET("/",ph.GetProducts)	
-	r.POST("/products",middleware.MethodCheck(),middleware.JSONCheck(),ph.AddProduct)
-	r.PUT("/products/:id",middleware.MethodCheck(),middleware.JSONCheck(),ph.UpdateProduct)
+	r := gin.Default()
 
+	productRoutes := r.Group("/products")
+	{
+		productRoutes.GET("/", ph.GetProducts)
+		productRoutes.POST("/", middleware.MethodCheck(), middleware.JSONCheck(), ph.AddProduct)
+		productRoutes.PUT("/:id", middleware.MethodCheck(), middleware.JSONCheck(), ph.UpdateProduct)
+	}
 
 	// 4️⃣ Register routes
 	// sm.Handle("/", hh)
 	// sm.Handle("/goodbye", gh)
 	// sm.Handle("/product",ph).
 
-
-
-
-
 	// 5️⃣ Create a fully configured server
 	s := &http.Server{
-		Addr:         ":9090",               // server port
-		Handler:      r,                    // router
-		IdleTimeout:  120 * time.Second,     // disconnect idle clients
-		ReadTimeout:  1 * time.Second,       // read time limit
-		WriteTimeout: 1 * time.Second,       // write time limit
+		Addr:         ":9090",           // server port
+		Handler:      r,                 // router
+		IdleTimeout:  120 * time.Second, // disconnect idle clients
+		ReadTimeout:  1 * time.Second,   // read time limit
+		WriteTimeout: 1 * time.Second,   // write time limit
 	}
 
 	// 6️⃣ Start server asynchronously (goroutine)
