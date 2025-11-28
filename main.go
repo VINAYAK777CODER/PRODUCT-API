@@ -1,8 +1,6 @@
 package main
 
 import (
-	"WORKING-GO/handlers"
-	"WORKING-GO/middleware"
 	"context"
 	"log"
 	"net/http"
@@ -12,6 +10,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/VINAYAK777CODER/PRODUCT-API/handlers"
+	appmw "github.com/VINAYAK777CODER/PRODUCT-API/middleware"
+	swaggerMw "github.com/go-openapi/runtime/middleware"
 )
 
 func main() {
@@ -35,9 +37,17 @@ func main() {
 	productRoutes := r.Group("/products")
 	{
 		productRoutes.GET("/", ph.GetProducts)
-		productRoutes.POST("/", middleware.MethodCheck(), middleware.JSONCheck(), ph.AddProduct)
-		productRoutes.PUT("/:id", middleware.MethodCheck(), middleware.JSONCheck(), ph.UpdateProduct)
+		productRoutes.POST("/", appmw.MethodCheck(), appmw.JSONCheck(), ph.AddProduct)
+		productRoutes.PUT("/:id", appmw.MethodCheck(), appmw.JSONCheck(), ph.UpdateProduct)
 	}
+
+	// serve swagger file
+	r.StaticFile("/swagger.yaml", "./swagger.yaml")
+
+	// serve redoc UI
+	opts := swaggerMw.RedocOpts{SpecURL: "/swagger.yaml"}
+	sh := swaggerMw.Redoc(opts, nil)
+	r.GET("/docs", gin.WrapH(sh))
 
 	// 4️⃣ Register routes
 	// sm.Handle("/", hh)

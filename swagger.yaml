@@ -1,0 +1,156 @@
+basePath: /
+consumes:
+    - application/json
+definitions:
+    Product:
+        description: |-
+            The 'SKU' field uses custom validation tag: `sku`
+            So the validator will run validateSKU() on this field.
+        properties:
+            description:
+                type: string
+                x-go-name: Description
+            id:
+                format: int64
+                type: integer
+                x-go-name: ID
+            name:
+                type: string
+                x-go-name: Name
+            price:
+                format: float
+                type: number
+                x-go-name: Price
+            sku:
+                type: string
+                x-go-name: SKU
+        title: Product Struct
+        type: object
+        x-go-package: github.com/VINAYAK777CODER/PRODUCT-API/data
+info:
+    description: Documentation for Product API
+    title: of Product API
+    version: 1.0.0
+paths:
+    /products:
+        get:
+            description: This endpoint returns the complete list of products available in the system.
+            operationId: listProducts
+            responses:
+                "200":
+                    $ref: '#/responses/productsResponse'
+            summary: Get all products
+            tags:
+                - products
+        post:
+            description: This endpoint creates a new product using JSON data sent in the request body.
+            operationId: addProduct
+            responses:
+                "201":
+                    $ref: '#/responses/productAddSuccess'
+                "400":
+                    $ref: '#/responses/productAddValidationError'
+            summary: Add a new product
+            tags:
+                - products
+    /products/{id}:
+        put:
+            description: |-
+                This endpoint updates a product that already exists in the system.
+                It requires a valid numeric ID in the URL and a valid JSON body.
+            operationId: updateProduct
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  type: integer
+            responses:
+                "200":
+                    $ref: '#/responses/productUpdateSuccess'
+                "400":
+                    $ref: '#/responses/productUpdateValidationError'
+                "404":
+                    $ref: '#/responses/productUpdateNotFound'
+                "500":
+                    $ref: '#/responses/productUpdateServerError'
+            summary: Update an existing product by its ID.
+            tags:
+                - products
+produces:
+    - application/json
+responses:
+    productAddBadRequest:
+        description: ""
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    productAddSuccess:
+        description: ""
+        schema:
+            properties:
+                data:
+                    $ref: '#/definitions/Product'
+                message:
+                    type: string
+                    x-go-name: Message
+            type: object
+    productAddValidationError:
+        description: ""
+        schema:
+            properties:
+                validation_error:
+                    type: string
+                    x-go-name: ValidationError
+            type: object
+    productUpdateBadRequest:
+        description: ""
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    productUpdateNotFound:
+        description: ""
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    productUpdateServerError:
+        description: ""
+        schema:
+            properties:
+                error:
+                    type: string
+                    x-go-name: Error
+            type: object
+    productUpdateSuccess:
+        description: ""
+        schema:
+            properties:
+                message:
+                    type: string
+                    x-go-name: Message
+            type: object
+    productUpdateValidationError:
+        description: ""
+        schema:
+            properties:
+                validation_error:
+                    type: string
+                    x-go-name: ValidationError
+            type: object
+    productsResponse:
+        description: ListProductsResponse represents the response for GET /products
+        schema:
+            items:
+                $ref: '#/definitions/Product'
+            type: array
+schemes:
+    - http
+swagger: "2.0"

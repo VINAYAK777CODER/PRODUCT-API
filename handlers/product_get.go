@@ -1,11 +1,31 @@
 package handlers
 
 import (
-	"WORKING-GO/data"
+	"github.com/VINAYAK777CODER/PRODUCT-API/data"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+// ListProductsResponse represents the response for GET /products
+//
+// swagger:response productsResponse
+type ListProductsResponse struct {
+	// in: body
+	Body []data.Product
+}
+
+// swagger:route GET /products products listProducts
+//
+// Get all products
+//
+// This endpoint returns the complete list of products available in the system.
+//
+// Responses:
+//   200: productsResponse
+//
+
+
 
 // GetProducts handles: GET /product
 // ---------------------------------------------------------------

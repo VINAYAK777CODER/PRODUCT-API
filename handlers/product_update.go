@@ -1,12 +1,82 @@
 package handlers
 
 import (
-	"WORKING-GO/data"
+	"github.com/VINAYAK777CODER/PRODUCT-API/data"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
+
+// -----------------------------
+// Swagger Response Definitions
+// -----------------------------
+
+// swagger:response productUpdateSuccess
+type ProductUpdateSuccessResponse struct {
+	// in:body
+	Body struct {
+		Message string `json:"message"`
+	}
+}
+
+// swagger:response productUpdateNotFound
+type ProductUpdateNotFoundResponse struct {
+	// in:body
+	Body struct {
+		Error string `json:"error"`
+	}
+}
+
+// swagger:response productUpdateBadRequest
+type ProductUpdateBadRequestResponse struct {
+	// in:body
+	Body struct {
+		Error string `json:"error"`
+	}
+}
+
+// swagger:response productUpdateValidationError
+type ProductUpdateValidationErrorResponse struct {
+	// in:body
+	Body struct {
+		ValidationError string `json:"validation_error"`
+	}
+}
+
+// swagger:response productUpdateServerError
+type ProductUpdateServerErrorResponse struct {
+	// in:body
+	Body struct {
+		Error string `json:"error"`
+	}
+}
+
+// ------------------------------------
+// FIXED Swagger Route Documentation
+// ------------------------------------
+
+//
+// swagger:route PUT /products/{id} products updateProduct
+//
+// Update an existing product by its ID.
+//
+// This endpoint updates a product that already exists in the system.
+// It requires a valid numeric ID in the URL and a valid JSON body.
+//
+// Parameters:
+//   + name: id
+//     in: path
+//     required: true
+//     type: integer
+//
+// Responses:
+//   200: productUpdateSuccess
+//   400: productUpdateBadRequest
+//   400: productUpdateValidationError
+//   404: productUpdateNotFound
+//   500: productUpdateServerError
+//
 
 // UpdateProduct handles: PUT /product/:id
 // ----------------------------------------------------------------------------

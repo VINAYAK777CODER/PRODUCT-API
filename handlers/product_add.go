@@ -1,11 +1,57 @@
 package handlers
 
 import (
-	"WORKING-GO/data"
+	"github.com/VINAYAK777CODER/PRODUCT-API/data"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+// -----------------------------
+// Swagger Response Definitions
+// -----------------------------
+
+// swagger:response productAddSuccess
+type ProductAddSuccessResponse struct {
+	// in:body
+	Body struct {
+		Message string       `json:"message"`
+		Data    data.Product `json:"data"`
+	}
+}
+
+// swagger:response productAddBadRequest
+type ProductAddBadRequestResponse struct {
+	// in:body
+	Body struct {
+		Error string `json:"error"`
+	}
+}
+
+// swagger:response productAddValidationError
+type ProductAddValidationErrorResponse struct {
+	// in:body
+	Body struct {
+		ValidationError string `json:"validation_error"`
+	}
+}
+
+// ------------------------------------
+// FIXED Swagger Route Documentation
+// ------------------------------------
+
+//
+// swagger:route POST /products products addProduct
+//
+// Add a new product
+//
+// This endpoint creates a new product using JSON data sent in the request body.
+//
+// Responses:
+//   201: productAddSuccess
+//   400: productAddBadRequest
+//   400: productAddValidationError
+//
 
 // AddProduct handles: POST /product
 // ------------------------------------------------------------------------
