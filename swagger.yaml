@@ -3,29 +3,44 @@ consumes:
     - application/json
 definitions:
     Product:
-        description: |-
-            The 'SKU' field uses custom validation tag: `sku`
-            So the validator will run validateSKU() on this field.
         properties:
             description:
+                description: Description of the product
+                example: Frothy milky coffee
                 type: string
                 x-go-name: Description
             id:
+                description: ID of the product
+                example: 1
                 format: int64
                 type: integer
                 x-go-name: ID
             name:
+                description: Name of the product
+                example: Latte
                 type: string
                 x-go-name: Name
             price:
+                description: Price of the product (must be greater than 0)
+                example: 2.45
                 format: float
                 type: number
                 x-go-name: Price
             sku:
+                description: 'SKU code (format: abc-123-xyz)'
+                example: abc-323-abc
                 type: string
                 x-go-name: SKU
-        title: Product Struct
+        required:
+            - name
+            - price
+            - sku
         type: object
+        x-go-package: github.com/VINAYAK777CODER/PRODUCT-API/data
+    Products:
+        items:
+            $ref: '#/definitions/Product'
+        type: array
         x-go-package: github.com/VINAYAK777CODER/PRODUCT-API/data
 info:
     description: Documentation for Product API
@@ -59,8 +74,10 @@ paths:
             operationId: deleteProduct
             parameters:
                 - description: Product ID to delete
+                  example: 1
                   format: int64
                   in: path
+                  minimum: 1
                   name: id
                   required: true
                   type: integer

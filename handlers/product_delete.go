@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 // ----------------------------
 // Swagger Models for DELETE
 // ----------------------------
@@ -18,6 +17,8 @@ type ProductIDParam struct {
 	// Product ID to delete
 	// in: path
 	// required: true
+	// minimum: 1
+	// example: 1
 	ID int `json:"id"`
 }
 
@@ -52,19 +53,18 @@ type DeleteProductError struct {
 	}
 }
 
-
 // swagger:route DELETE /products/{id} products deleteProduct
 //
-// Delete a product by ID
+// # Delete a product by ID
 //
 // This endpoint removes the product with the provided ID from the system.
 //
 // Responses:
-//   200: deleteProductResponse
-//   400: deleteProductError
-//   404: deleteProductNotFound
-//   500: deleteProductError
 //
+//	200: deleteProductResponse
+//	400: deleteProductError
+//	404: deleteProductNotFound
+//	500: deleteProductError
 func (p *Products) Delete(c *gin.Context) {
 	p.l.Println("DELETE /products/:id called")
 

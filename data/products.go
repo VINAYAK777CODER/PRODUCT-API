@@ -10,7 +10,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-
 /*
 ------------------------------------------------------
 GLOBAL VARIABLES (package-level)
@@ -38,7 +37,7 @@ Why use init() here?
 ✔ Cleaner and faster
 
 You NEVER call init() yourself.
-Go runtime always calls it before main.
+Go runtime always calls it before main().
 */
 func init() {
 
@@ -59,15 +58,36 @@ Product Struct
 The 'SKU' field uses custom validation tag: `sku`
 So the validator will run validateSKU() on this field.
 */
+
+// swagger:model Product
 type Product struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name" validate:"required"`
-	Description string  `json:"description"`
-	Price       float32 `json:"price" validate:"gt=0"`
-	SKU         string  `json:"sku" validate:"required,sku"`
-	CreatedOn   string  `json:"-"` // "-" means DO NOT show in JSON
-	UpdatedOn   string  `json:"-"`
-	DeletedOn   string  `json:"-"`
+
+	// ID of the product
+	// example: 1
+	ID int `json:"id"`
+
+	// Name of the product
+	// required: true
+	// example: Latte
+	Name string `json:"name" validate:"required"`
+
+	// Description of the product
+	// example: Frothy milky coffee
+	Description string `json:"description"`
+
+	// Price of the product (must be greater than 0)
+	// required: true
+	// example: 2.45
+	Price float32 `json:"price" validate:"gt=0"`
+
+	// SKU code (format: abc-123-xyz)
+	// required: true
+	// example: abc-323-abc
+	SKU string `json:"sku" validate:"required,sku"`
+
+	CreatedOn string `json:"-"` // "-" means DO NOT show in JSON
+	UpdatedOn string `json:"-"`
+	DeletedOn string `json:"-"`
 }
 
 /*
@@ -84,6 +104,7 @@ REASON:
 We separated registration into init(),
 so this method stays clean and fast.
 */
+// swagger:ignore
 func (p *Product) Validate() error {
 	return validate.Struct(p)
 }
@@ -104,6 +125,7 @@ Steps:
 2. Match it against precompiled regex
 3. Return true (valid) or false (invalid)
 */
+// swagger:ignore
 func validateSKU(fl validator.FieldLevel) bool {
 
 	// Field value (e.g., "abc-123-xyz")
@@ -123,6 +145,8 @@ func validateSKU(fl validator.FieldLevel) bool {
 // 1. Cleaner code (we use Products instead of []*Product everywhere)
 // 2. We can add methods on it (like ToJSON)
 // 3. Makes the code easy to understand
+
+// swagger:model Products
 type Products []*Product
 
 // ----------------------
@@ -134,6 +158,7 @@ type Products []*Product
 // Why receiver is (p *Product)?
 // → Because JSON of ONE product should fill ONE Product.
 // → "p" will store the decoded JSON data.
+// swagger:ignore
 func (p *Product) FromJSON(r io.Reader) error {
 	e := json.NewDecoder(r)
 	return e.Decode(p)
@@ -152,6 +177,7 @@ func (p *Product) FromJSON(r io.Reader) error {
 // Why use Encoder instead of Marshal?
 // → Encoder writes directly to response (streaming)
 // → Faster + less memory
+// swagger:ignore
 func (p *Products) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(p) // writes JSON directly to 'w'
@@ -162,6 +188,7 @@ func (p *Products) ToJSON(w io.Writer) error {
 // ----------------------
 //
 // Returns our in-memory product slice (Products type).
+// swagger:ignore
 func GetProductList() Products {
 	return ProductList
 }
@@ -172,6 +199,7 @@ func GetProductList() Products {
 //
 // Adds a new product to the ProductList.
 // Auto-increases ID.
+// swagger:ignore
 func AddProduct(p *Product) {
 	p.ID = getNextId()
 	ProductList = append(ProductList, p)
@@ -182,6 +210,7 @@ func AddProduct(p *Product) {
 // ----------------------
 //
 // Gets the last product ID and returns next ID.
+// swagger:ignore
 func getNextId() int {
 	lastProduct := ProductList[len(ProductList)-1]
 	return lastProduct.ID + 1
@@ -190,6 +219,7 @@ func getNextId() int {
 // UpdateProduct updates the product that matches the given ID.
 // This function belongs to "data" layer because updating records
 // is a DATA responsibility (not handler responsibility).
+// swagger:ignore
 func UpdateProduct(id int, p *Product) error {
 
 	// STEP 1: Find the product and get its index
@@ -210,6 +240,7 @@ func UpdateProduct(id int, p *Product) error {
 	return nil
 }
 
+// swagger:ignore
 func DeleteProduct(id int) error {
 	_, pos, err := findProduct(id)
 	if err != nil {
@@ -222,7 +253,6 @@ func DeleteProduct(id int) error {
 	return nil
 }
 
-
 // Common error used when ID is not found
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
@@ -231,6 +261,7 @@ var ErrProductNotFound = fmt.Errorf("Product not found")
 //
 //	product, index, nil → if found
 //	nil, -1, ErrProductNotFound  → if not found
+// swagger:ignore
 func findProduct(id int) (*Product, int, error) {
 	for i, p := range ProductList {
 		if p.ID == id {
